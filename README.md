@@ -1,76 +1,58 @@
 # POC: Integração Híbrida (WebView & Android Nativo)
 
-Este projeto demonstra a arquitetura de comunicação bidirecional entre uma aplicação Android nativa e uma aplicação Web encapsulada em uma `WebView`. O objetivo é validar a fluidez de dados durante um fluxo de login e a persistência de estado entre telas nativas e web.
+Este projeto demonstra a arquitetura de comunicação bidirecional entre uma aplicação Android nativa e uma aplicação Web Angular encapsulada em uma `WebView`.
 
-## 🏗️ Arquitetura da Solução
+## 🏗️ Configuração de Redes Locais (Importante)
 
-A solução utiliza o conceito de **Javascript Interface** para criar uma "ponte" (Bridge) de comunicação.
+Para que o emulador Android acesse o seu servidor local (Angular rodando em `localhost:4200`), utilizamos o IP de loopback especial do Android: **`10.0.2.2`**.
 
-### Componentes Principais:
-1.  **`MainActivity` (Login Web):** Atua como o host para a aplicação de autenticação legada ou web.
-2.  **`WebAppInterface` (The Bridge):** Classe mediadora que recebe eventos do JavaScript e os traduz para ações nativas (Kotlin).
-3.  **`HomeActivity` (Nativo + Web):** Demonstra como o app nativo consome dados recebidos da web para injetar contexto em novas instâncias de WebView.
+*   **URL de Login:** `http://10.0.2.2:4200/login`
+*   **URL de Dashboard:** `http://10.0.2.2:4200/dashboard`
+
+**Nota:** Foi habilitado o `usesCleartextTraffic="true"` no `AndroidManifest.xml` para permitir conexões HTTP (não-seguras) durante esta fase de desenvolvimento local.
 
 ---
 
 ## 🔄 Fluxo de Comunicação
 
 ### 1. Web -> Nativo (Javascript Interface)
-Quando o usuário realiza o login na WebView, o JavaScript da página invoca um método exposto pelo Android.
+Quando o usuário realiza o login no Angular, o serviço de integração invoca a ponte injetada pelo Android.
 
-*   **Ponte Nativa:** Definida na classe `WebAppInterface`.
-*   **Chamada no JS:**
-    ```javascript
+*   **Ponte Nativa:** Chamada `AndroidBridge`.
+*   **Chamada no Angular:**
+    ```typescript
     if (window.AndroidBridge) {
-        window.AndroidBridge.onLoginComplete("TOKEN_GERADO_NA_WEB");
+        window.AndroidBridge.onLoginComplete("TOKEN_GERADO_NO_ANGULAR");
     }
     ```
 
 ### 2. Nativo -> Web (Injeção de Contexto)
-Após o login, o dado (Token) é passado para a `HomeActivity` nativa, que por sua vez carrega uma nova WebView injetando esse token via **Query Parameters** ou **Headers**.
+Após o login, o app nativo abre a `HomeActivity` e carrega a rota de dashboard passando o token via Query Parameter.
 
-*   **Implementação:**
-    ```kotlin
-    val homeUrl = "https://seu-portal.com.br/dashboard?token=$token"
-    binding.webViewHome.loadUrl(homeUrl)
-    ```
+*   **URL Gerada pelo App:** `http://10.0.2.2:4200/dashboard?token=xyz`
 
 ---
 
-## 💎 Benefícios
+## 💎 Benefícios e Riscos
 
-| Benefício | Descrição |
+| Benefício | Risco |
 | :--- | :--- |
-| **Agilidade de Negócio** | Permite atualizar fluxos críticos (como regras de login) sem necessidade de um novo deploy na Play Store. |
-| **Consistência Visual** | Mantém a mesma interface entre plataformas (Web e App) para fluxos complexos. |
-| **Redução de Custo** | Reutilização de código web existente dentro de um container nativo de alta performance. |
-| **Transição Suave** | Permite migrar gradualmente funcionalidades de Web para Nativo conforme a necessidade de performance. |
-
----
-
-## ⚠️ Riscos e Considerações de Segurança
-
-A integração via WebView exige cautela arquitetural:
-
-1.  **XSS (Cross-Site Scripting):**
-    *   *Risco:* Se a página carregada for comprometida, um atacante pode executar comandos nativos através da `AndroidBridge`.
-    *   *Mitigação:* Restringir o uso de `addJavascriptInterface` apenas para domínios HTTPS confiáveis e usar o `@JavascriptInterface` (obrigatório desde API 17).
-
-2.  **Performance e UX:**
-    *   *Risco:* WebViews consomem mais memória e podem parecer "travadas" se o JS for pesado.
-    *   *Mitigação:* Ativar `domStorageEnabled` e utilizar `WebChromeClient` para melhor renderização.
-
-3.  **Vazamento de Credenciais:**
-    *   *Risco:* Tokens expostos na URL podem ser interceptados em logs de servidor.
-    *   *Mitigação:* Preferir o envio de dados sensíveis via injeção de JavaScript (`evaluateJavascript`) ou POST requests customizados.
+| Agilidade de deploy Web | Vulnerabilidade a XSS se o domínio for comprometido |
+| Reuso de código PrimeNG | Performance inferior comparado ao nativo puro |
+| Sincronização de estado entre plataformas | Exposição de dados sensíveis em URLs (Mitigado com HTTPS em prod) |
 
 ---
 
 ## 🚀 Como Executar a POC
 
-1.  Certifique-se de que o dispositivo/emulador tem acesso à internet.
-2.  O arquivo `build.gradle.kts` já possui o **View Binding** ativado.
-3.  A `MainActivity` iniciará carregando a URL de login. Ao disparar o evento `onLoginComplete`, a transição nativa ocorrerá automaticamente.
+1.  **No Lado Web (Angular):**
+    *   Inicie seu projeto Angular: `npm start` ou `ng serve`.
+    *   Certifique-se de que ele está acessível em `http://localhost:4200`.
+
+2.  **No Lado Mobile (Android):**
+    *   Execute o projeto através do Android Studio em um **Emulador**.
+    *   O App abrirá automaticamente na tela de Login.
+    *   Ao realizar o login no Angular, o app redirecionará para a `HomeActivity` nativa, que carregará o Dashboard Web.
 
 ---
 **Documentação elaborada para fins de validação técnica (POC).**

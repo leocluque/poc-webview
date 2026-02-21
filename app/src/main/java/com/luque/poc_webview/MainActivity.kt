@@ -25,27 +25,25 @@ class MainActivity : AppCompatActivity() {
             domStorageEnabled = true
         }
 
-        // "AndroidBridge" será o objeto acessível no JavaScript da WebView
         binding.webViewLogin.addJavascriptInterface(WebAppInterface { token ->
             handleLoginSuccess(token)
         }, "AndroidBridge")
 
-        binding.webViewLogin.loadUrl("https://seu-site-de-login.com.br")
+        // Para acessar o localhost do seu computador via Emulador Android,
+        // use o IP especial 10.0.2.2 em vez de localhost ou 127.0.0.1.
+        binding.webViewLogin.loadUrl("http://10.0.2.2:4200/login")
 
         binding.webViewLogin.webViewClient = WebViewClient()
     }
 
     private fun handleLoginSuccess(token: String) {
-        // As chamadas vindas do JavaScript rodam em uma thread separada.
-        // Precisamos voltar para a Main Thread para operações de UI e Navegação.
         runOnUiThread {
             Toast.makeText(this, "Login efetuado com sucesso!", Toast.LENGTH_SHORT).show()
-
             val intent = Intent(this, HomeActivity::class.java).apply {
                 putExtra("USER_TOKEN", token)
             }
             startActivity(intent)
-            finish() // Encerra a tela de login para que o 'back' não volte pra ela
+            finish()
         }
     }
 }
