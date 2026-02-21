@@ -29,7 +29,8 @@ class MainActivity : AppCompatActivity() {
             handleLoginSuccess(token)
         }, "AndroidBridge")
 
-        // Para acessar o localhost do seu computador via Emulador Android,
+        // Para acessar o localhost do seu computador via Emulador Android, se for usar um device fisico
+        // coloque o ip da maquina + porta 4200
         // use o IP especial 10.0.2.2 em vez de localhost ou 127.0.0.1.
         binding.webViewLogin.loadUrl("http://10.0.2.2:4200/login")
 
