@@ -37,7 +37,9 @@ Abaixo, uma comparação do tempo de inicialização. Note como a **Custom Tab**
 
 Para remover a barra de endereço nas Custom Tabs e obter uma experiência "Full Native", implementamos o **Digital Asset Links**. Veja a diferença visual abaixo:
 
-![Diferença Visual com e sem Asset Link](https://lh3.googleusercontent.com/gg-dl/AOI_d__LkdlmUN18bk81VGh3c1KioHE37MWLEyFCvBepZW_Lo6N54wA-Mrjkh5KLOmOth-vMFy6Vs0SFvgmxLaWXML6Imt_ShwmLsCqTXIRp0v7qkLZpiHBo8_t2fYXNI_JTktUhdg3lI0TmZaF7TO4pE4XWZEouLskKEuz10OOOwMOEBwbhBw=s1024-rj)
+![Diferença Visual com e sem Asset Link]()![customtab](https://github.com/user-attachments/assets/1a867b0b-1f8f-40d5-8316-56e73a766920)
+![customtab](https://github.com/user-attachments/assets/1a867b0b-1f8f-40d5-8316-56e73a766920)
+
 
 1.  **Verificação de Propriedade:** Cria-se um arquivo de confiança entre o App e o Servidor.
 2.  **Configuração:** Hospedar em `https://seu-dominio.com.br/.well-known/assetlinks.json`.
