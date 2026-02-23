@@ -1,47 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp"
     tools:context=".MainActivity">
 
-    <WebView
-        android:id="@+id/webViewLogin"
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Escolha o Fluxo da POC"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="40dp"/>
+
+    <Button
+        android:id="@+id/btnWebView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="Fluxo via WebView"
+        android:textAllCaps="false"/>
 
-    <LinearLayout
-        android:id="@+id/errorLayout"
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Comunicação bidirecional direta via Bridge JS."
+        android:textSize="12sp"
+        android:layout_marginBottom="24dp"/>
+
+    <Button
+        android:id="@+id/btnCustomTab"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#FFFFFF"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:visibility="gone">
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="Fluxo via Custom Tabs"
+        android:textAllCaps="false"/>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ops! Não conseguimos conectar."
-            android:textColor="#FF0000"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Melhor para Auth (Cookie sharing + Security). Comunicação via Deep Links."
+        android:textSize="12sp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:text="Verifique se o seu servidor Angular está rodando em http://localhost:4200" />
-
-        <Button
-            android:id="@+id/btnRetry"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Tentar Novamente" />
-    </LinearLayout>
-
-</FrameLayout>
+</LinearLayout>
