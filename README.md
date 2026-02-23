@@ -10,25 +10,38 @@ Este projeto é uma Prova de Conceito (POC) avançada que demonstra as duas prin
 | :--- | :--- | :--- |
 | **Escopo** | Componente interno (Container) | Instância otimizada do navegador Chrome |
 | **Comunicação** | **Bridge JS:** Bidirecional direta. | **Deep Links:** URIs customizadas. |
-| **Experiência** | 100% Integrada (Invisível) | Transição Suave (Aba do Navegador) |
+| **Experiência** | 100% Integrada (Invisível) | Transição Suave (Barra de URL visível*) |
 | **Segurança** | **Risco Elevado** | **Alta Segurança (Padrão Oauth)** |
 | **Sessão/Cookies** | Isolada do navegador | Compartilhada com o Chrome |
+
+### ⚡ Performance e Latência
+Abaixo, uma comparação do tempo de inicialização. Note como a **Custom Tab** (à esquerda) carrega quase instantaneamente comparada à **WebView** (à direita), devido ao pré-aquecimento do motor do Chrome.
+
+![Comparativo de Latência: Custom Tab vs Chrome vs WebView](https://miro.medium.com/v2/resize:fit:1280/format:webp/1*PJAu8wk0e6AjWqiJTnxWYQ.gif)
 
 ---
 
 ## 🔐 Diferenças Críticas de Segurança
 
-A escolha entre uma tecnologia e outra deve ser pautada principalmente pela **origem do conteúdo** e a **sensibilidade dos dados**.
-
 ### 1. WebView: Controle Total vs. Vulnerabilidade
-*   **Vulnerabilidade XSS:** Se o código JavaScript da página for comprometido, um atacante pode usar a `JavascriptInterface` para executar comandos nativos (ex: acessar câmera, contatos ou sistema de arquivos).
-*   **Interceptação de Dados:** O App Android tem poder total sobre a WebView. Ele pode injetar scripts para capturar senhas digitadas ou interceptar requisições HTTP, o que é um risco se o conteúdo web não for de propriedade da empresa.
-*   **Manutenção:** O motor da WebView depende da versão instalada no sistema, podendo conter vulnerabilidades não corrigidas em dispositivos antigos.
+*   **Vulnerabilidade XSS:** Se o código JavaScript da página for comprometido, um atacante pode usar a `JavascriptInterface` para executar comandos nativos.
+*   **Interceptação de Dados:** O App Android tem poder total sobre a WebView. Ele pode injetar scripts para capturar senhas ou interceptar requisições.
 
 ### 2. Custom Tabs: O "Cofre" do Navegador
-*   **Isolamento (Sandboxing):** O App Android **não tem acesso** ao que acontece dentro da Custom Tab. Ele não pode ler o DOM, capturar cliques ou interceptar cookies.
-*   **Proteção do Chrome:** Utiliza todos os recursos de segurança do Google Chrome, como *Safe Browsing* (detecção de phishing e malware) e atualizações automáticas de segurança.
-*   **Cookie Sharing:** É o cenário ideal para Login (SSO). O usuário aproveita sua sessão já logada no Chrome, e o App recebe apenas o token de volta via Deep Link, sem nunca "ver" a senha do usuário.
+*   **Isolamento (Sandboxing):** O App Android **não tem acesso** ao que acontece dentro da Custom Tab. Não pode ler o DOM ou capturar cliques.
+*   **Cookie Sharing:** Cenário ideal para Login (SSO). O usuário aproveita sua sessão já logada no Chrome.
+
+---
+
+## 🚀 Experiência Nativa com Digital Asset Links (TWA)
+
+Para remover a barra de endereço nas Custom Tabs e obter uma experiência "Full Native", implementamos o **Digital Asset Links**. Veja a diferença visual abaixo:
+
+![Diferença Visual com e sem Asset Link](https://lh3.googleusercontent.com/gg-dl/AOI_d__LkdlmUN18bk81VGh3c1KioHE37MWLEyFCvBepZW_Lo6N54wA-Mrjkh5KLOmOth-vMFy6Vs0SFvgmxLaWXML6Imt_ShwmLsCqTXIRp0v7qkLZpiHBo8_t2fYXNI_JTktUhdg3lI0TmZaF7TO4pE4XWZEouLskKEuz10OOOwMOEBwbhBw=s1024-rj)
+
+1.  **Verificação de Propriedade:** Cria-se um arquivo de confiança entre o App e o Servidor.
+2.  **Configuração:** Hospedar em `https://seu-dominio.com.br/.well-known/assetlinks.json`.
+3.  **Resultado:** O Chrome valida a assinatura e oculta a UI do navegador, transformando a Custom Tab em uma **Trusted Web Activity (TWA)**.
 
 ---
 
@@ -36,33 +49,18 @@ A escolha entre uma tecnologia e outra deve ser pautada principalmente pela **or
 
 ### Fluxo via WebView (Ponte Nativa)
 *   **Web -> Nativo:** `window.AndroidBridge.onLoginComplete(token)`
-*   **Nativo -> Web:** Carregamento de URL com parâmetros ou injeção via `evaluateJavascript`.
-*   **Uso Ideal:** Dashboards internos, telas de suporte e fluxos onde a UI web e nativa devem ser indistinguíveis.
+*   **Uso Ideal:** Dashboards internos e fluxos onde a UI deve ser indistinguível.
 
 ### Fluxo via Custom Tabs (Redirecionamento)
-*   **Nativo -> Web:** Início via `CustomTabsIntent`.
-*   **Web -> Nativo:** Redirecionamento via URI Scheme:
-    *   *Login:* `window.location.href = 'pocwebview://callback?token=XYZ'`
-    *   *Ação:* `window.location.href = 'pocwebview://callback?action=navigateToSecondActivity'`
-*   **Uso Ideal:** Autenticação (Login/Cadastro), Termos de Uso, Pagamentos e Conteúdos de Terceiros.
+*   **Web -> Nativo:** Redirecionamento via URI Scheme: `pocwebview://callback?token=XYZ`
+*   **Uso Ideal:** Autenticação (OAuth2), Pagamentos e Conteúdos de Terceiros.
 
 ---
 
-## 🛠️ Detalhes Técnicos de Implementação
-
+## 🛠️ Detalhes Técnicos
 *   **Rede:** Uso de `10.0.2.2:4200` para acesso ao localhost via emulador.
-*   **Resiliência:** Tratamento nativo de erros de carregamento na WebView com tela de "Retry".
-*   **Navegação:** A `HomeActivity` detecta a origem e adapta a UI automaticamente (WebView interna vs. Botão de abertura de Custom Tab).
-
----
-
-## 🚀 Como Executar
-
-1.  **Lado Web (Angular):**
-    *   Execute: `ng serve --host 0.0.0.0 --disable-host-check`.
-2.  **Lado Android:**
-    *   Rode o App no Emulador.
-    *   Escolha o fluxo na tela inicial e observe o comportamento das barras de sistema e a transição entre telas.
+*   **Resiliência:** Tratamento nativo de erros na WebView com tela de "Retry".
+*   **Navegação:** A `HomeActivity` detecta a origem e adapta a UI automaticamente.
 
 ---
 **Documentação estratégica elaborada para fins de arquitetura de solução.**
