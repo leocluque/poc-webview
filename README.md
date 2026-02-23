@@ -1,58 +1,68 @@
-# POC: Integração Híbrida (WebView & Android Nativo)
+# POC: Estratégias de Integração Híbrida (WebView vs. Custom Tabs)
 
-Este projeto demonstra a arquitetura de comunicação bidirecional entre uma aplicação Android nativa e uma aplicação Web Angular encapsulada em uma `WebView`.
-
-## 🏗️ Configuração de Redes Locais (Importante)
-
-Para que o emulador Android acesse o seu servidor local (Angular rodando em `localhost:4200`), utilizamos o IP de loopback especial do Android: **`10.0.2.2`**.
-
-*   **URL de Login:** `http://10.0.2.2:4200/login`
-*   **URL de Dashboard:** `http://10.0.2.2:4200/dashboard`
-
-**Nota:** Foi habilitado o `usesCleartextTraffic="true"` no `AndroidManifest.xml` para permitir conexões HTTP (não-seguras) durante esta fase de desenvolvimento local.
+Este projeto é uma Prova de Conceito (POC) avançada que demonstra as duas principais abordagens para integrar aplicações Web (Angular) em um ecossistema Android Nativo, com foco em arquitetura escalável e segurança.
 
 ---
 
-## 🔄 Fluxo de Comunicação
+## 🏛️ Comparativo Detalhado: WebView vs. Custom Tabs
 
-### 1. Web -> Nativo (Javascript Interface)
-Quando o usuário realiza o login no Angular, o serviço de integração invoca a ponte injetada pelo Android.
-
-*   **Ponte Nativa:** Chamada `AndroidBridge`.
-*   **Chamada no Angular:**
-    ```typescript
-    if (window.AndroidBridge) {
-        window.AndroidBridge.onLoginComplete("TOKEN_GERADO_NO_ANGULAR");
-    }
-    ```
-
-### 2. Nativo -> Web (Injeção de Contexto)
-Após o login, o app nativo abre a `HomeActivity` e carrega a rota de dashboard passando o token via Query Parameter.
-
-*   **URL Gerada pelo App:** `http://10.0.2.2:4200/dashboard?token=xyz`
+| Característica | WebView | Chrome Custom Tabs |
+| :--- | :--- | :--- |
+| **Escopo** | Componente interno (Container) | Instância otimizada do navegador Chrome |
+| **Comunicação** | **Bridge JS:** Bidirecional direta. | **Deep Links:** URIs customizadas. |
+| **Experiência** | 100% Integrada (Invisível) | Transição Suave (Aba do Navegador) |
+| **Segurança** | **Risco Elevado** | **Alta Segurança (Padrão Oauth)** |
+| **Sessão/Cookies** | Isolada do navegador | Compartilhada com o Chrome |
 
 ---
 
-## 💎 Benefícios e Riscos
+## 🔐 Diferenças Críticas de Segurança
 
-| Benefício | Risco |
-| :--- | :--- |
-| Agilidade de deploy Web | Vulnerabilidade a XSS se o domínio for comprometido |
-| Reuso de código PrimeNG | Performance inferior comparado ao nativo puro |
-| Sincronização de estado entre plataformas | Exposição de dados sensíveis em URLs (Mitigado com HTTPS em prod) |
+A escolha entre uma tecnologia e outra deve ser pautada principalmente pela **origem do conteúdo** e a **sensibilidade dos dados**.
+
+### 1. WebView: Controle Total vs. Vulnerabilidade
+*   **Vulnerabilidade XSS:** Se o código JavaScript da página for comprometido, um atacante pode usar a `JavascriptInterface` para executar comandos nativos (ex: acessar câmera, contatos ou sistema de arquivos).
+*   **Interceptação de Dados:** O App Android tem poder total sobre a WebView. Ele pode injetar scripts para capturar senhas digitadas ou interceptar requisições HTTP, o que é um risco se o conteúdo web não for de propriedade da empresa.
+*   **Manutenção:** O motor da WebView depende da versão instalada no sistema, podendo conter vulnerabilidades não corrigidas em dispositivos antigos.
+
+### 2. Custom Tabs: O "Cofre" do Navegador
+*   **Isolamento (Sandboxing):** O App Android **não tem acesso** ao que acontece dentro da Custom Tab. Ele não pode ler o DOM, capturar cliques ou interceptar cookies.
+*   **Proteção do Chrome:** Utiliza todos os recursos de segurança do Google Chrome, como *Safe Browsing* (detecção de phishing e malware) e atualizações automáticas de segurança.
+*   **Cookie Sharing:** É o cenário ideal para Login (SSO). O usuário aproveita sua sessão já logada no Chrome, e o App recebe apenas o token de volta via Deep Link, sem nunca "ver" a senha do usuário.
+
+---
+
+## 🔄 Fluxos de Comunicação Implementados
+
+### Fluxo via WebView (Ponte Nativa)
+*   **Web -> Nativo:** `window.AndroidBridge.onLoginComplete(token)`
+*   **Nativo -> Web:** Carregamento de URL com parâmetros ou injeção via `evaluateJavascript`.
+*   **Uso Ideal:** Dashboards internos, telas de suporte e fluxos onde a UI web e nativa devem ser indistinguíveis.
+
+### Fluxo via Custom Tabs (Redirecionamento)
+*   **Nativo -> Web:** Início via `CustomTabsIntent`.
+*   **Web -> Nativo:** Redirecionamento via URI Scheme:
+    *   *Login:* `window.location.href = 'pocwebview://callback?token=XYZ'`
+    *   *Ação:* `window.location.href = 'pocwebview://callback?action=navigateToSecondActivity'`
+*   **Uso Ideal:** Autenticação (Login/Cadastro), Termos de Uso, Pagamentos e Conteúdos de Terceiros.
 
 ---
 
-## 🚀 Como Executar a POC
+## 🛠️ Detalhes Técnicos de Implementação
 
-1.  **No Lado Web (Angular):**
-    *   Inicie seu projeto Angular: `npm start` ou `ng serve`.
-    *   Certifique-se de que ele está acessível em `http://localhost:4200`.
-
-2.  **No Lado Mobile (Android):**
-    *   Execute o projeto através do Android Studio em um **Emulador**.
-    *   O App abrirá automaticamente na tela de Login.
-    *   Ao realizar o login no Angular, o app redirecionará para a `HomeActivity` nativa, que carregará o Dashboard Web.
+*   **Rede:** Uso de `10.0.2.2:4200` para acesso ao localhost via emulador.
+*   **Resiliência:** Tratamento nativo de erros de carregamento na WebView com tela de "Retry".
+*   **Navegação:** A `HomeActivity` detecta a origem e adapta a UI automaticamente (WebView interna vs. Botão de abertura de Custom Tab).
 
 ---
-**Documentação elaborada para fins de validação técnica (POC).**
+
+## 🚀 Como Executar
+
+1.  **Lado Web (Angular):**
+    *   Execute: `ng serve --host 0.0.0.0 --disable-host-check`.
+2.  **Lado Android:**
+    *   Rode o App no Emulador.
+    *   Escolha o fluxo na tela inicial e observe o comportamento das barras de sistema e a transição entre telas.
+
+---
+**Documentação estratégica elaborada para fins de arquitetura de solução.**
